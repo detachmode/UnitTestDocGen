@@ -1,0 +1,10 @@
+/Users/dennismuller/Desktop/csharp/bin/Debug/netcoreapp2.0/csharp.deps.json
+/Users/dennismuller/Desktop/csharp/bin/Debug/netcoreapp2.0/csharp.runtimeconfig.json
+/Users/dennismuller/Desktop/csharp/bin/Debug/netcoreapp2.0/csharp.runtimeconfig.dev.json
+/Users/dennismuller/Desktop/csharp/bin/Debug/netcoreapp2.0/csharp.dll
+/Users/dennismuller/Desktop/csharp/bin/Debug/netcoreapp2.0/csharp.pdb
+/Users/dennismuller/Desktop/csharp/obj/Debug/netcoreapp2.0/csharp.csproj.CoreCompileInputs.cache
+/Users/dennismuller/Desktop/csharp/obj/Debug/netcoreapp2.0/csharp.AssemblyInfoInputs.cache
+/Users/dennismuller/Desktop/csharp/obj/Debug/netcoreapp2.0/csharp.AssemblyInfo.cs
+/Users/dennismuller/Desktop/csharp/obj/Debug/netcoreapp2.0/csharp.dll
+/Users/dennismuller/Desktop/csharp/obj/Debug/netcoreapp2.0/csharp.pdb
