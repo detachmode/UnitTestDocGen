@@ -11,7 +11,7 @@ namespace csharp
             Console.WriteLine("Hello World!");
             // GetMethodInfo(Program.Main);
             var ut = new CalculatorTest();
-            ut.Add_Test();
+            ut.Init();
             //nameof(Main).CallWithDefaults();
         }
 

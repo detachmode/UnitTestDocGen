@@ -23,4 +23,13 @@ namespace DocGenerator
             Method = method;
         }
     }
+    [AttributeUsage(AttributeTargets.Method)]
+    public class DocMeFactAttribute : Attribute
+    {
+        public string Fact { get; set; }
+        public DocMeFactAttribute(string fact)
+        {
+            Fact = fact;
+        }
+    }
 }

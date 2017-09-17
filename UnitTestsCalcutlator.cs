@@ -4,7 +4,7 @@ using System.Linq;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using System.IO;
-
+using Shouldly;
 namespace DocGenerator
 {
 
@@ -26,15 +26,13 @@ namespace DocGenerator
             {
                 File.AppendAllText("Markdown.md", s);
             };
+            Add_Test();
+            DocMe.Instance().Write();
+
         }
 
-        [DocMethod(nameof(Calculator.Add))]
-        public void Add_Test()
+        public void Geofence_Test()
         {
-            Init();
-            var doc = DocMe.Instance().SetupDocTest(MethodBase.GetCurrentMethod());
-
-
             var dataAccess = Substitute.For<IDataAccess>();
 
             var mock = new Mock<IDataAccess>
@@ -46,27 +44,36 @@ namespace DocGenerator
             dataAccess.CreatePerson(Arg.Any<int>(), Arg.Any<Person>())
             .ThrowsForAnyArgs(mock.Throws);
 
-
             //  dataAccess
             //     .When( info => Caller.CallWithDefaults(typeof(IDataAccess), "CreatePerson"))
             //     .ThrowsForAnyArgs(new Exception("peter"));
 
-            var now =  DateTime.Now.Date;
-            var p = new Person("Dennis", 28);
-            // SetupMocks(mock);
-            doc.SetArg(1, 2, p, now);
-            var result = Calculator.Add(1, 2, p, now);
-
-
-            doc.Results = p;
-            // DocMock(mock);            
-            // WriteDoc(doc);
-            DocMe.Instance().Write();
         }
 
+        [DocMethod(nameof(Calculator.Add))]
+        [DocMeFact(@"
+        The sum of the first two numbers will be the age of the person.
+        The DateTime parameter is of no use.
+        ")]
+        public void Add_Test()
+        {
+            var doc = DocMe.New(MethodBase.GetCurrentMethod());
+            
+            var now = DateTime.Now.Date;
+            var p = new Person("Dennis", 28);
 
+            doc.Call(1, 2, p, now);
 
+            Calculator.Add(1, 2, p, now);
 
+            doc.Insert("The targetPerson is passed as reference and its state will be modified.");
+            doc.State(p);
+        }
 
+        public void ShouldDocBe(Func<int> a , int b){
+            var m = a.Method;
+            a().ShouldBe(b);
+
+        }
     }
 }

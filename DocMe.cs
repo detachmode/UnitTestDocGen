@@ -14,29 +14,40 @@ namespace DocGenerator
     {
         public Type Class { get; set; }
         public string Method { get; set; }
-        public string Args { get; set; }
-        public string ParameterTable { get; set; }
-        public object Results { get; set; }
-        public void SetArg(params object[] args)
+        public string Fact { get; set; }
+        public List<string> DocTextBlocks { get; set; } = new List<string>();
+
+
+        private void AddCsharp(string code)
+        {
+            StringBuilder sb = new StringBuilder();
+            void append(string str) => sb.AppendLine(str);
+            append("```csharp");
+            append(code);
+            append("```");
+            this.DocTextBlocks.Add(sb.ToString());
+        }
+        public void Call(params object[] args)
         {
 
-            var ms =typeof(Calculator).GetMethod("Add");
-            
+            var ms = typeof(Calculator).GetMethod("Add");
+            Insert($"When called `{this.Method}` of the class `{this.Class.Name}` with:");
+
             var parameter = Class
                 .GetMethod(Method)
                 .GetParameters();
 
-            var formattedArgs = String.Join(",", 
-                args.Zip(parameter, (a,p) =>{
-                    if(!a.GetType().IsPrimitive)
+            var formattedArgs = String.Join(",",
+                args.Zip(parameter, (a, p) =>
+                {
+                    if (!a.GetType().IsPrimitive)
                         return p.Name;
                     else
                         return a;
                 }));
 
-                  
-    
-            Args = $"({formattedArgs})";
+
+            AddCsharp($"{this.Method}({formattedArgs});");
 
             string createRow(object a, string name)
             {
@@ -47,29 +58,45 @@ namespace DocGenerator
 {a.ClassToYaml()}</td>
     </tr>";
             };
-                
+
             var values = args
                  .Where(x => !x.GetType().IsPrimitive);
 
-  
 
-            var classParameters =  
+
+            var classParameters =
                 parameter
                     .Where(p => !p.ParameterType.IsPrimitive)
-                    .Select(p => p.Name);  
+                    .Select(p => p.Name);
+
 
             var rows = values.Zip(classParameters, createRow);
 
-            this.ParameterTable = $@"<table>
+            var paramTable = ($@"<table>
     <tr>
         <th>Parameter</th>
         <th>Type</th>
-        <th>Content</th>
+        <th>State</th>
     </tr>
 {String.Concat(rows)}
-</table>";
+</table>");
+            this.DocTextBlocks.Add(paramTable);
         }
 
+        public void Insert(string v) =>
+            this.DocTextBlocks.Add(v + Environment.NewLine);
+
+        public void State(object o)
+        {
+            StringBuilder sb = new StringBuilder();
+            void append(string str) => sb.AppendLine(str);
+            append($"Now the {o.GetType().Name} object has the following state:");
+            append("");
+            append("```yaml");
+            append($"{o.ClassToYaml()}```");
+
+            DocTextBlocks.Add(sb.ToString());
+        }
 
     }
     public class Mock<T>
@@ -99,7 +126,7 @@ namespace DocGenerator
 
 
 
-        public void SetupMocks<T>(Mock<T> mock) where T : class
+        public static void SetupMocks<T>(Mock<T> mock) where T : class
         {
             typeof(T)
                 .When(info => Caller.CallWithDefaults(typeof(T), mock.Method))
@@ -122,41 +149,42 @@ namespace DocGenerator
 
             append($"# Documentation of class `{doc1.Class.Name}`");
             append($"## Method `{doc1.Method}`");
-            append($"When called `{doc1.Method}` of the class `{doc1.Class.Name}` with:");
-            // var args = doc.Args.Aggregate((a,b) => $"{a},{b}");
-            append("```csharp");
-            append($"{doc1.Method}{doc1.Args};");
-            append("```");            
-            append($"{doc1.ParameterTable}");
-            append($"Now the {doc1.Results.GetType().Name} object has the following content:");
+            append(doc1.Fact);
             append("");
-            append("```yaml");
-            append($"{doc1.Results.ClassToYaml()}"); 
-            append("```");
+            doc1.DocTextBlocks.ForEach(append);
             OnOutput(sb.ToString());
         }
 
         public void AssertAndDoc<T>(T expected, T actual, DocumentedAssert doctest)
         {
             // Assert 
-            doctest.Results = expected;
+            doctest.Insert(expected.ClassToYaml());
 
         }
 
-        public DocumentedAssert SetupDocTest(MethodBase methodBase)
+        public static DocumentedAssert New(MethodBase methodBase)
         {
+            T GetAttrText<T>() where T : class
+            {
+                var classAttr = methodBase.DeclaringType
+                    .GetCustomAttributes()
+                    .First(x => x.GetType() == typeof(T));
+                var c = classAttr as T;
+                return c;
+            };
             var doctest = new DocumentedAssert();
-            Docs.Add(doctest);
+            DocMe.Instance().Docs.Add(doctest);
 
-            var classAttr = methodBase.DeclaringType
-                .GetCustomAttributes()
-                .First(x => x.GetType() == typeof(DocClassAttribute));
-            var c = classAttr as DocClassAttribute;
-            doctest.Class = c.ClassType;
+
+            doctest.Class = GetAttrText<DocClassAttribute>().ClassType;
 
             var attr = (DocMethodAttribute)methodBase
                 .GetCustomAttributes(typeof(DocMethodAttribute), true)[0];
             doctest.Method = attr.Method;
+
+            doctest.Fact = ((DocMeFactAttribute)methodBase
+                .GetCustomAttributes(typeof(DocMeFactAttribute), true).First()).Fact;
+            doctest.Fact = doctest.Fact.Trim();
             return doctest;
         }
     }
